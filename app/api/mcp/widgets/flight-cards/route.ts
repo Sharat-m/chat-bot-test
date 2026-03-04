@@ -1,0 +1,412 @@
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flight Results</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: transparent;
+      padding: 16px;
+    }
+    
+    .flight-results {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .flight-card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+      transition: transform 0.2s;
+    }
+    
+    .flight-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .flight-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #f0f2f5;
+    }
+    
+    .airline-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .airline-logo {
+      width: 32px;
+      height: 32px;
+      background: #f0f2f5;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #4a5568;
+    }
+    
+    .airline-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #1a202c;
+    }
+    
+    .price-tag {
+      background: #48bb78;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 24px;
+      font-weight: 700;
+      font-size: 1.25rem;
+      box-shadow: 0 2px 4px rgba(72, 187, 120, 0.2);
+    }
+    
+    .route-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .location {
+      text-align: center;
+    }
+    
+    .city-code {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+    
+    .time {
+      color: #718096;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+    
+    .flight-path {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      margin: 0 20px;
+    }
+    
+    .duration {
+      background: #edf2f7;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      color: #4a5568;
+      margin-bottom: 8px;
+    }
+    
+    .path-line {
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: #48bb78;
+      border-radius: 50%;
+    }
+    
+    .line {
+      flex: 1;
+      height: 2px;
+      background: #e2e8f0;
+      position: relative;
+    }
+    
+    .line::after {
+      content: '✈️';
+      position: absolute;
+      right: -10px;
+      top: -8px;
+      font-size: 12px;
+    }
+    
+    .flight-details {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 12px;
+    }
+    
+    .detail-item {
+      flex: 1;
+      text-align: center;
+    }
+    
+    .detail-label {
+      font-size: 0.8rem;
+      color: #718096;
+      margin-bottom: 4px;
+    }
+    
+    .detail-value {
+      font-weight: 600;
+      color: #2d3748;
+    }
+    
+    .layover-info {
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: #856404;
+    }
+    
+    .booking-section {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .book-button {
+      flex: 1;
+      background: #3182ce;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+      text-align: center;
+      display: inline-block;
+    }
+    
+    .book-button:hover {
+      background: #2c5282;
+    }
+    
+    .details-button {
+      padding: 12px 20px;
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      color: #4a5568;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .details-button:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #718096;
+    }
+    
+    .error {
+      background: #fee;
+      border: 1px solid #fcc;
+      border-radius: 8px;
+      padding: 20px;
+      color: #c33;
+      text-align: center;
+    }
+    
+    .no-flights {
+      text-align: center;
+      padding: 40px;
+      color: #718096;
+      background: #f8fafc;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root" class="flight-results">
+    <div class="loading">Loading flights...</div>
+  </div>
+
+  <script>
+    (function() {
+      const root = document.getElementById('root');
+      
+      function renderFlights(flights) {
+        if (!flights || flights.length === 0) {
+          root.innerHTML = '<div class="no-flights">No flights found. Try different search criteria.</div>';
+          return;
+        }
+        
+        let html = '';
+        
+        flights.forEach((flight, index) => {
+          const deeplinks = Array.isArray(flight.deeplink) ? flight.deeplink : [];
+          const bookingLink = deeplinks[0] || '#';
+          const detailsLink = deeplinks[1] || bookingLink;
+          
+          const layoverText = flight.layovers && flight.layovers.length > 0 
+            ? \`Layover in \${flight.layovers.join(', ')}\` 
+            : flight.layover || '';
+          
+          const airlineCode = flight.airline ? flight.airline.substring(0, 2).toUpperCase() : 'FL';
+          
+          html += \`
+            <div class="flight-card" data-flight-index="\${index}">
+              <div class="flight-header">
+                <div class="airline-info">
+                  <div class="airline-logo">\${airlineCode}</div>
+                  <span class="airline-name">\${flight.airline || 'Unknown Airline'}</span>
+                </div>
+                <div class="price-tag">\${flight.price || 'Price on request'}</div>
+              </div>
+              
+              <div class="route-info">
+                <div class="location">
+                  <div class="city-code">\${flight.from || '???'}</div>
+                  <div class="time">\${flight.departureTime || '--:--'}</div>
+                </div>
+                
+                <div class="flight-path">
+                  <span class="duration">\${flight.duration || 'Duration N/A'}</span>
+                  <div class="path-line">
+                    <span class="dot"></span>
+                    <span class="line"></span>
+                    <span class="dot"></span>
+                  </div>
+                </div>
+                
+                <div class="location">
+                  <div class="city-code">\${flight.to || '???'}</div>
+                  <div class="time">\${flight.arrivalTime || '--:--'}</div>
+                </div>
+              </div>
+              
+              <div class="flight-details">
+                <div class="detail-item">
+                  <div class="detail-label">Stops</div>
+                  <div class="detail-value">\${flight.stops || 'Non-stop'}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Stop Count</div>
+                  <div class="detail-value">\${flight.stopCount || 0}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Trip Type</div>
+                  <div class="detail-value">\${flight.tripType || 'One-way'}</div>
+                </div>
+              </div>
+              
+              \${layoverText ? \`
+                <div class="layover-info">
+                  ✈️ \${layoverText}
+                </div>
+              \` : ''}
+              
+              <div class="booking-section">
+                <a href="\${bookingLink}" target="_blank" class="book-button" rel="noopener noreferrer">
+                  Book Now
+                </a>
+                <a href="\${detailsLink}" target="_blank" class="details-button" rel="noopener noreferrer">
+                  Details
+                </a>
+              </div>
+            </div>
+          \`;
+        });
+        
+        // Add view all link
+        if (window.lastSearchMetadata?.viewAllUrl) {
+          html += \`
+            <div style="text-align: center; margin-top: 20px;">
+              <a href="\${window.lastSearchMetadata.viewAllUrl}" target="_blank" style="color: #3182ce; text-decoration: none; font-weight: 600;">
+                View All Results on FareFirst →
+              </a>
+            </div>
+          \`;
+        }
+        
+        root.innerHTML = html;
+      }
+      
+      // Listen for data from ChatGPT
+      window.addEventListener('openai:set_globals', function(event) {
+        if (event.detail?.globals?.toolOutput) {
+          const toolOutput = event.detail.globals.toolOutput;
+          console.log('Received tool output:', toolOutput);
+          
+          if (toolOutput.flights) {
+            window.lastSearchMetadata = toolOutput.searchMetadata;
+            renderFlights(toolOutput.flights);
+          }
+        }
+      });
+      
+      // Check for existing data
+      if (window.openai?.toolOutput) {
+        const toolOutput = window.openai.toolOutput;
+        if (toolOutput.flights) {
+          window.lastSearchMetadata = toolOutput.searchMetadata;
+          renderFlights(toolOutput.flights);
+        }
+      }
+      
+      // Handle errors
+      window.addEventListener('error', function(e) {
+        console.error('Widget error:', e);
+        root.innerHTML = '<div class="error">Something went wrong loading flights.</div>';
+      });
+    })();
+  </script>
+</body>
+</html>`;
+
+  return new Response(html, {
+    headers: {
+      'Content-Type': 'text/html+skybridge',
+      'Cache-Control': 'public, max-age=3600',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
+}
+
+// Handle OPTIONS for CORS
+export async function OPTIONS() {
+  return new Response(null, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
